@@ -1,0 +1,30 @@
+# OpenSSL: print hash and fingerprint
+$ openssl x509 -subject_hash -fingerprint -noout -in Verisign_Class_3_Public_Primary_Certification_Authority.crt
+415660c1
+SHA1 Fingerprint=74:2C:31:92:E6:07:E4:24:EB:45:49:54:2B:E1:BB:C5:3E:61:74:E2
+
+# GnuTLS: print fingerprint
+$ certtool --fingerprint --infile Verisign_Class_3_Public_Primary_Certification_Authority.crt
+742c3192e607e424eb4549542be1bbc53e6174e2
+
+OpenSSL:
+x=load_cert(bio_err,infile,informat,NULL,e,"Certificate");
+BIO_printf(STDout,"%08lx\n",X509_subject_name_hash(x));
+  return(X509_NAME_hash(x->cert_info->subject));
+
+unsigned long X509_NAME_hash(X509_NAME *x)
+	{
+	unsigned long ret=0;
+	unsigned char md[SHA_DIGEST_LENGTH];
+
+	/* Make sure X509_NAME structure contains valid cached encoding */
+	i2d_X509_NAME(x,NULL);
+	if (!EVP_Digest(x->canon_enc, x->canon_enclen, md, NULL, EVP_sha1(),
+		NULL))
+		return 0;
+
+	ret=(	((unsigned long)md[0]     )|((unsigned long)md[1]<<8L)|
+		((unsigned long)md[2]<<16L)|((unsigned long)md[3]<<24L)
+		)&0xffffffffL;
+	return(ret);
+	}
